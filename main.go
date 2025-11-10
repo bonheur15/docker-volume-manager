@@ -18,6 +18,7 @@ type DockerVolumePayload struct {
 }
 
 func main() {
+
 	baseDir := "./docker/volumes"
 	if err := os.MkdirAll(baseDir, 0755); err != nil {
 		log.Fatalf("Failed to create base directory: %v", err)
@@ -35,6 +36,11 @@ func main() {
 
 		volumePath := filepath.Join(baseDir, payload.Name)
 		dataPath := filepath.Join(volumePath, "_data")
+		absDataPath, err := filepath.Abs(dataPath)
+		if err != nil {
+			handleError(w, fmt.Sprintf("Failed to resolve absolute path: %v", err))
+			return
+		}
 		imagePath := filepath.Join(volumePath, "volume.img")
 
 		size := payload.DriverOpts["size"]
@@ -69,7 +75,7 @@ func main() {
 		if err := runCommand(
 			"docker", "volume", "create",
 			"--name", payload.Name,
-			"--opt", fmt.Sprintf("device=%s", dataPath),
+			"--opt", fmt.Sprintf("device=%s", absDataPath),
 			"--opt", "type=none",
 			"--opt", "o=bind",
 		); err != nil {
